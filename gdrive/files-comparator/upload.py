@@ -1,10 +1,7 @@
 import os
 import sys
 import logging
-from httplib2 import Http
-from oauth2client import file, client, tools
 from apiclient.http import MediaFileUpload
-from apiclient.discovery import build
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -17,39 +14,25 @@ logger.addHandler(ch)
 
 IMAGE_TYPES = ['.jpg']
 VIDEO_TYPES = ['.mp4']
-folder_id = '0Bx6x3olZsVExNEhvSWNhZzhENjg'
 
 
-def get_mimetype(filename, filepath):
-    d, extension = os.path.splitext(filepath+filename)    
+def get_mimetype(filename):
+    d, extension = os.path.splitext(filename)    
     if extension in IMAGE_TYPES:
         return 'image/jpeg'
 
-def get_drive_service():
-    logger.info('Obtaining Drive service')
-    # Setup the Drive v3 API
-    SCOPES = 'https://www.googleapis.com/auth/drive'
-    store = file.Storage('credentials.json')
-    creds = store.get()
-    if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets('client_secret.json', SCOPES)
-        creds = tools.run_flow(flow, store)    
 
-    return build('drive', 'v3', http=creds.authorize(Http()))
+def photo_or_video(filename, filepath, drive_service, folder_id):    
 
-
-def photo_or_video(filename, filepath):    
-
+    logger.info('Prepare to upload file %s to Google Drive folder %s' % (filepath+filename.encode('utf-8'), folder_id))
+    
     file_metadata = {'name': filename, 
                      'parents': [folder_id]
                      }
-    mimetype = get_mimetype(filename, filepath)
+    mimetype = get_mimetype(filename)
 
     media = MediaFileUpload(filepath+'/'+filename,
                             mimetype=mimetype)       
-
-    drive_service = get_drive_service()
-
 
     logger.info('Uploading file %s to Google Drive folder %s' % (filepath+filename.encode('utf-8'), folder_id))
 
